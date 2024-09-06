@@ -151,6 +151,34 @@ const Game = () => {
     cube.castShadow = true;
     scene.add(cube);
 
+    const cursorVector = new THREE.Vector3(); // Create a single Vector3 instance
+    let lastCursorX = 0;
+    let lastCursorY = 0;
+
+    window.addEventListener("mousemove", (event) => {
+      const cursorX = event.clientX;
+      const cursorY = event.clientY;
+
+      // Check if the cursor has moved a certain distance (0.1 units)
+      if (
+        Math.abs(cursorX - lastCursorX) > 0.1 ||
+        Math.abs(cursorY - lastCursorY) > 0.1
+      ) {
+        lastCursorX = cursorX;
+        lastCursorY = cursorY;
+
+        // Calculate the cursor's position in 3D space
+        cursorVector.x = (cursorX / window.innerWidth) * 2 - 1;
+        cursorVector.y = -(cursorY / window.innerHeight) * 2 + 1;
+        cursorVector.z = 0.5; // adjust this value to change the cursor's z-position
+
+        // Update the cube's position
+        cube.position.x = cursorVector.x;
+        cube.position.y = cursorVector.y;
+        cube.position.z = cursorVector.z;
+      }
+    });
+
     const ground = new Box({
       width: 10,
       height: 0.5,
