@@ -1,21 +1,22 @@
 "use client";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 const Game = () => {
   useEffect(() => {
     const scene = new THREE.Scene();
+
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(4.61, 2.74, 8);
-
+    camera.position.set(0, 2, 10); // Adjust camera position to view from top
+    camera.rotation.set(-Math.PI / 6, 0, 0);
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
@@ -151,34 +152,26 @@ const Game = () => {
     cube.castShadow = true;
     scene.add(cube);
 
-    const cursorVector = new THREE.Vector3(); // Create a single Vector3 instance
+    const cursorVector = new THREE.Vector3();
     let lastCursorX = 0;
     let lastCursorY = 0;
+    const cursor = new THREE.Vector3();
 
     window.addEventListener("mousemove", (event) => {
-      const cursorX = event.clientX;
-      const cursorY = event.clientY;
+      cursor.x = (event.clientX / window.innerWidth) * 2 - 1;
+      cursor.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      cursor.z = 0.5;
 
-      // Check if the cursor has moved a certain distance (0.1 units)
-      if (
-        Math.abs(cursorX - lastCursorX) > 0.1 ||
-        Math.abs(cursorY - lastCursorY) > 0.1
-      ) {
-        lastCursorX = cursorX;
-        lastCursorY = cursorY;
+      cube.position.x = cursor.x * 10;
+      cube.position.y = cursor.y * 10;
+      cube.position.z = cursor.z * 10;
 
-        // Calculate the cursor's position in 3D space
-        cursorVector.x = (cursorX / window.innerWidth) * 2 - 1;
-        cursorVector.y = -(cursorY / window.innerHeight) * 2 + 1;
-        cursorVector.z = 0.5; // adjust this value to change the cursor's z-position
-
-        // Update the cube's position
-        cube.position.x = cursorVector.x;
-        cube.position.y = cursorVector.y;
-        cube.position.z = cursorVector.z;
-      }
+      // Prevent cube from moving below the ground
+      cube.position.y = Math.max(
+        cube.position.y,
+        ground.position.y + ground.height / 2 + cube.height / 2
+      );
     });
-
     const ground = new Box({
       width: 10,
       height: 0.5,
@@ -251,11 +244,14 @@ const Game = () => {
 
     function animate() {
       animationId = requestAnimationFrame(animate);
+
       renderer.render(scene, camera);
+      controls.update();
 
       if (car) {
-        car.position.x += keys.a.pressed ? -0.05 : keys.d.pressed ? 0.05 : 0;
-        car.position.z += keys.s.pressed ? 0.05 : keys.w.pressed ? -0.05 : 0;
+        car.position.x += (cursorVector.x - car.position.x) * 0.1;
+        car.position.y += (cursorVector.y - car.position.y) * 0.1;
+        car.position.z += (cursorVector.z - car.position.z) * 0.1;
       }
 
       cube.velocity.x = 0;
